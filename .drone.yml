@@ -14,20 +14,20 @@ steps:
   - apk --no-cache add git make
   - make build
 
-- name: publish-binary
-  image: plugins/github-release
-  settings:
-    api_key:
-      from_secret: github_api_key
-    files: dist/artifacts/*
-  when:
-    event:
-      - tag
-    instance:
-      - drone-publish.k3s.io
-    ref:
-      - refs/head/master
-      - refs/tags/*
+#- name: publish-binary
+#  image: plugins/github-release
+#  settings:
+#    api_key:
+#      from_secret: github_api_key
+#    files: dist/artifacts/*
+#  when:
+#    event:
+#      - tag
+#    instance:
+#      - drone-publish.k3s.io
+#    ref:
+#      - refs/head/master
+#      - refs/tags/*
 
 - name: publish-image
   image: plugins/docker

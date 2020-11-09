@@ -6,4 +6,4 @@ RUN apk --no-cache add bash curl docker git make
 RUN make build
 
 FROM scratch AS package
-COPY --from=build /go/src/go-what/dist/artifacts/what /bin/what
+COPY --from=build /go/src/go-what/bin/what /bin/what
