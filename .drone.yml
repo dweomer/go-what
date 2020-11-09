@@ -15,7 +15,7 @@ steps:
   - make build
   - file bin/what
 
-- name: publish-binary
+- name: release
   image: plugins/github-release
   settings:
     api_key:
@@ -23,14 +23,14 @@ steps:
     files: dist/artifacts/*
   when:
     event:
-      - tag
+    - tag
     instance:
-      - drone-publish.k3s.io
+    - drone-publish.k3s.io
     ref:
-      - refs/head/master
-      - refs/tags/*
+    - refs/head/master
+    - refs/tags/*
 
-- name: publish-image
+- name: publish
   image: plugins/docker
   settings:
     target: package
@@ -42,12 +42,114 @@ steps:
       from_secret: docker_password
   when:
     event:
-      - tag
+    - tag
     instance:
-      - drone-publish.k3s.io
+    - drone-publish.k3s.io
     ref:
-      - refs/head/master
-      - refs/tags/*
+    - refs/head/master
+    - refs/tags/*
+
+---
+kind: pipeline
+type: docker
+name: arm64
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+- name: build
+  image: golang:1.15-alpine
+  commands:
+  - apk --no-cache add file git make
+  - make build
+  - file bin/what
+
+- name: release
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_api_key
+    files: dist/artifacts/*
+  when:
+    event:
+    - tag
+    instance:
+    - drone-publish.k3s.io
+    ref:
+    - refs/head/master
+    - refs/tags/*
+
+- name: publish
+  image: plugins/docker
+  settings:
+    target: package
+    repo: dweomer/what
+    tag: "${DRONE_TAG}-arm64"
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+  when:
+    event:
+    - tag
+    instance:
+    - drone-publish.k3s.io
+    ref:
+    - refs/head/master
+    - refs/tags/*
+
+---
+kind: pipeline
+type: docker
+name: arm
+
+platform:
+  os: linux
+  arch: arm
+
+steps:
+- name: build
+  image: golang:1.15-alpine
+  commands:
+  - apk --no-cache add file git make
+  - make build
+  - file bin/what
+
+- name: release
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_api_key
+    files: dist/artifacts/*
+  when:
+    event:
+    - tag
+    instance:
+    - drone-publish.k3s.io
+    ref:
+    - refs/head/master
+    - refs/tags/*
+
+- name: publish
+  image: plugins/docker
+  settings:
+    target: package
+    repo: dweomer/what
+    tag: "${DRONE_TAG}-arm"
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+  when:
+    event:
+    - tag
+    instance:
+    - drone-publish.k3s.io
+    ref:
+    - refs/head/master
+    - refs/tags/*
 
 ---
 kind: pipeline
