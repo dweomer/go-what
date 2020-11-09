@@ -11,8 +11,9 @@ steps:
 - name: build
   image: golang:1.15-alpine
   commands:
-  - apk --no-cache add git make
+  - apk --no-cache add file git make
   - make build
+  - file bin/what
 
 - name: publish-binary
   image: plugins/github-release
