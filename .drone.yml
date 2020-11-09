@@ -14,20 +14,20 @@ steps:
   - apk --no-cache add git make
   - make build
 
-#- name: publish-binary
-#  image: plugins/github-release
-#  settings:
-#    api_key:
-#      from_secret: github_api_key
-#    files: dist/artifacts/*
-#  when:
-#    event:
-#      - tag
-#    instance:
-#      - drone-publish.k3s.io
-#    ref:
-#      - refs/head/master
-#      - refs/tags/*
+- name: publish-binary
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_api_key
+    files: dist/artifacts/*
+  when:
+    event:
+      - tag
+    instance:
+      - drone-publish.k3s.io
+    ref:
+      - refs/head/master
+      - refs/tags/*
 
 - name: publish-image
   image: plugins/docker
@@ -39,8 +39,6 @@ steps:
       from_secret: docker_username
     password:
       from_secret: docker_password
-    auth:
-      from_secret: docker_auth_token
   when:
     event:
       - tag
@@ -60,7 +58,7 @@ platform:
   arch: amd64
 
 steps:
-- name: manifest
+- name: publish-manifest
   image: plugins/manifest
   settings:
     username:
@@ -69,8 +67,8 @@ steps:
       from_secret: docker_password
     platforms:
     - linux/amd64
-#    - linux/arm64
-#    - linux/arm
+    - linux/arm64
+    - linux/arm
     target: "dweomer/what:${DRONE_TAG}"
     template: "dweomer/what:${DRONE_TAG}-ARCH"
   when:
