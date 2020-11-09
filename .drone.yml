@@ -1,0 +1,90 @@
+---
+kind: pipeline
+type: docker
+name: amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  image: golang:1.15-alpine
+  commands:
+  - apk --no-cache add git make
+  - make build
+
+- name: publish-binary
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_api_key
+    files: dist/artifacts/*
+  when:
+    event:
+      - tag
+    instance:
+      - drone-publish.k3s.io
+    ref:
+      - refs/head/master
+      - refs/tags/*
+
+- name: publish-image
+  image: plugins/docker
+  settings:
+    target: package
+    repo: dweomer/what
+    tag: "${DRONE_TAG}-amd64"
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+    auth:
+      from_secret: docker_auth_token
+  when:
+    event:
+      - tag
+    instance:
+      - drone-publish.k3s.io
+    ref:
+      - refs/head/master
+      - refs/tags/*
+
+---
+kind: pipeline
+type: docker
+name: manifest
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: manifest
+  image: plugins/manifest
+  settings:
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+    platforms:
+    - linux/amd64
+#    - linux/arm64
+#    - linux/arm
+    target: "dweomer/what:${DRONE_TAG}"
+    template: "dweomer/what:${DRONE_TAG}-ARCH"
+  when:
+    event:
+    - tag
+    instance:
+    - drone-publish.k3s.io
+    ref:
+    - refs/head/master
+    - refs/tags/*
+
+depends_on:
+- amd64
+- arm64
+- arm
+
+...
