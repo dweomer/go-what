@@ -1,13 +1,14 @@
 package machine
 
 import (
-	"golang.org/x/sys/unix"
 	"strings"
+
+	"golang.org/x/sys/unix"
 )
 
 type What struct {
 	Architecture struct {
-		Go string
+		Go     string
 		System string
 	} `json:",omitempty"`
 }
@@ -22,7 +23,7 @@ func WithUTS() func(*What) error {
 		if err != nil {
 			return err
 		}
-		m.Architecture.System = strings.TrimRight(string(uts.Machine[:]),"\u0000")
+		m.Architecture.System = strings.TrimRight(string(uts.Machine[:]), "\u0000")
 		return nil
 	}
 }

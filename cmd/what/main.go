@@ -2,9 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"os"
+
 	"github.com/dweomer/go-what"
 	"github.com/dweomer/go-what/pkg/machine"
-	"os"
 )
 
 func main() {
@@ -12,5 +13,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	json.NewEncoder(os.Stdout).Encode(m)
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	enc.Encode(m)
 }
