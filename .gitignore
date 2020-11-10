@@ -15,8 +15,8 @@
 # vendor/
 
 .dapper
+.tags
 
 bin/
-build/
 dist/
 

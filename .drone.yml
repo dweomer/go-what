@@ -1,18 +1,31 @@
 ---
 kind: pipeline
 type: docker
-name: amd64
+name: build-amd64
 
 platform:
   os: linux
   arch: amd64
 
 steps:
+- name: prepare
+  image: plugins/docker
+  settings:
+    target: build
+    repo: build/dweomer/what
+    dry_run: true
+  volumes:
+    - name: docker
+      path: /var/run/docker.sock
+
 - name: build
-  image: golang:1.15-alpine
+  image: build/dweomer/what
+  pull: never
   commands:
-  - apk --no-cache add file git make
-  - make build
+    - make ci
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: release
   image: plugins/github-release
@@ -34,7 +47,7 @@ steps:
   settings:
     target: package
     repo: dweomer/what
-    tag: "${DRONE_TAG}-amd64"
+    tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
     username:
       from_secret: docker_username
     password:
@@ -48,107 +61,146 @@ steps:
     - refs/head/master
     - refs/tags/*
 
+volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
+
 ---
 kind: pipeline
 type: docker
-name: arm64
+name: build-arm64
 
 platform:
   os: linux
   arch: arm64
 
 steps:
-- name: build
-  image: golang:1.15-alpine
-  commands:
-  - apk --no-cache add file git make
-  - make build
-  - file bin/what
+  - name: prepare
+    image: plugins/docker
+    settings:
+      target: build
+      repo: build/dweomer/what
+      dry_run: true
+    volumes:
+      - name: docker
+        path: /var/run/docker.sock
 
-- name: release
-  image: plugins/github-release
-  settings:
-    api_key:
-      from_secret: github_api_key
-    files: dist/artifacts/*
-  when:
-    event:
-    - tag
-    instance:
-    - drone-publish.k3s.io
-    ref:
-    - refs/head/master
-    - refs/tags/*
+  - name: build
+    image: build/dweomer/what
+    pull: never
+    commands:
+      - make ci
+    volumes:
+      - name: docker
+        path: /var/run/docker.sock
 
-- name: publish
-  image: plugins/docker
-  settings:
-    target: package
-    repo: dweomer/what
-    tag: "${DRONE_TAG}-arm64"
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
-  when:
-    event:
-    - tag
-    instance:
-    - drone-publish.k3s.io
-    ref:
-    - refs/head/master
-    - refs/tags/*
+  - name: release
+    image: plugins/github-release
+    settings:
+      api_key:
+        from_secret: github_api_key
+      files: dist/artifacts/*
+    when:
+      event:
+        - tag
+      instance:
+        - drone-publish.k3s.io
+      ref:
+        - refs/head/master
+        - refs/tags/*
+
+  - name: publish
+    image: plugins/docker
+    settings:
+      target: package
+      repo: dweomer/what
+      tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+    when:
+      event:
+        - tag
+      instance:
+        - drone-publish.k3s.io
+      ref:
+        - refs/head/master
+        - refs/tags/*
+
+volumes:
+  - name: docker
+    host:
+      path: /var/run/docker.sock
 
 ---
 kind: pipeline
 type: docker
-name: arm
+name: build-armhf
 
 platform:
   os: linux
   arch: arm
 
 steps:
-- name: build
-  image: golang:1.15-alpine
-  commands:
-  - apk --no-cache add file git make
-  - make build
-  - file bin/what
+  - name: prepare
+    image: plugins/docker
+    settings:
+      target: build
+      repo: build/dweomer/what
+      dry_run: true
+    volumes:
+      - name: docker
+        path: /var/run/docker.sock
 
-- name: release
-  image: plugins/github-release
-  settings:
-    api_key:
-      from_secret: github_api_key
-    files: dist/artifacts/*
-  when:
-    event:
-    - tag
-    instance:
-    - drone-publish.k3s.io
-    ref:
-    - refs/head/master
-    - refs/tags/*
+  - name: build
+    image: build/dweomer/what
+    pull: never
+    commands:
+      - make ci
+    volumes:
+      - name: docker
+        path: /var/run/docker.sock
 
-- name: publish
-  image: plugins/docker
-  settings:
-    target: package
-    repo: dweomer/what
-    tag: "${DRONE_TAG}-arm"
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
-  when:
-    event:
-    - tag
-    instance:
-    - drone-publish.k3s.io
-    ref:
-    - refs/head/master
-    - refs/tags/*
+  - name: release
+    image: plugins/github-release
+    settings:
+      api_key:
+        from_secret: github_api_key
+      files: dist/artifacts/*
+    when:
+      event:
+        - tag
+      instance:
+        - drone-publish.k3s.io
+      ref:
+        - refs/head/master
+        - refs/tags/*
+
+  - name: publish
+    image: plugins/docker
+    settings:
+      target: package
+      repo: dweomer/what
+      tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+    when:
+      event:
+        - tag
+      instance:
+        - drone-publish.k3s.io
+      ref:
+        - refs/head/master
+        - refs/tags/*
+
+volumes:
+  - name: docker
+    host:
+      path: /var/run/docker.sock
 
 ---
 kind: pipeline
@@ -183,8 +235,8 @@ steps:
     - refs/tags/*
 
 depends_on:
-- amd64
-- arm64
-- arm
+- build-amd64
+- build-arm64
+- build-armhf
 
 ...
