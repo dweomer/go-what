@@ -11,18 +11,20 @@ steps:
 - name: prepare
   image: plugins/docker
   settings:
-    target: build
-    repo: build/dweomer/what
     dry_run: true
+    repo: build/dweomer/what
+    target: build
   volumes:
-    - name: docker
-      path: /var/run/docker.sock
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: build
-  image: build/dweomer/what
   pull: never
+  image: build/dweomer/what
   commands:
-    - make ci
+  - make ci
+  environment:
+    GOARCH: "${DRONE_STAGE_ARCH}"
   volumes:
   - name: docker
     path: /var/run/docker.sock
@@ -32,6 +34,10 @@ steps:
   settings:
     api_key:
       from_secret: github_api_key
+    checksum:
+    - sha256
+    checksum_file: "CHECKSUMsum-${DRONE_STAGE_ARCH}.txt"
+    checksum_flatten: true
     files: dist/artifacts/*
   when:
     event:
@@ -45,13 +51,15 @@ steps:
 - name: publish
   image: plugins/docker
   settings:
-    target: package
-    repo: dweomer/what
-    tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
-    username:
-      from_secret: docker_username
+    build_args:
+      GOARCH: "${DRONE_STAGE_ARCH}"
     password:
       from_secret: docker_password
+    repo: dweomer/what
+    tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
+    target: package
+    username:
+      from_secret: docker_username
   when:
     event:
     - tag
@@ -76,63 +84,71 @@ platform:
   arch: arm64
 
 steps:
-  - name: prepare
-    image: plugins/docker
-    settings:
-      target: build
-      repo: build/dweomer/what
-      dry_run: true
-    volumes:
-      - name: docker
-        path: /var/run/docker.sock
+- name: prepare
+  image: plugins/docker
+  settings:
+    dry_run: true
+    repo: build/dweomer/what
+    target: build
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
 
-  - name: build
-    image: build/dweomer/what
-    pull: never
-    commands:
-      - make ci
-    volumes:
-      - name: docker
-        path: /var/run/docker.sock
+- name: build
+  pull: never
+  image: build/dweomer/what
+  commands:
+  - make ci
+  environment:
+    GOARCH: "${DRONE_STAGE_ARCH}"
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
 
-  - name: release
-    image: plugins/github-release
-    settings:
-      api_key:
-        from_secret: github_api_key
-      files: dist/artifacts/*
-    when:
-      event:
-        - tag
-      instance:
-        - drone-publish.k3s.io
-      ref:
-        - refs/head/master
-        - refs/tags/*
+- name: release
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_api_key
+    checksum:
+    - sha256
+    checksum_file: "CHECKSUMsum-${DRONE_STAGE_ARCH}.txt"
+    checksum_flatten: true
+    files: dist/artifacts/*
+  when:
+    event:
+    - tag
+    instance:
+    - drone-publish.k3s.io
+    ref:
+    - refs/head/master
+    - refs/tags/*
 
-  - name: publish
-    image: plugins/docker
-    settings:
-      target: package
-      repo: dweomer/what
-      tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
-      username:
-        from_secret: docker_username
-      password:
-        from_secret: docker_password
-    when:
-      event:
-        - tag
-      instance:
-        - drone-publish.k3s.io
-      ref:
-        - refs/head/master
-        - refs/tags/*
+- name: publish
+  image: plugins/docker
+  settings:
+    build_args:
+      GOARCH: "${DRONE_STAGE_ARCH}"
+    password:
+      from_secret: docker_password
+    repo: dweomer/what
+    tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
+    target: package
+    username:
+      from_secret: docker_username
+  when:
+    event:
+    - tag
+    instance:
+    - drone-publish.k3s.io
+    ref:
+    - refs/head/master
+    - refs/tags/*
 
 volumes:
-  - name: docker
-    host:
-      path: /var/run/docker.sock
+- name: docker
+  host:
+    path: /var/run/docker.sock
 
 ---
 kind: pipeline
@@ -144,63 +160,71 @@ platform:
   arch: arm
 
 steps:
-  - name: prepare
-    image: plugins/docker
-    settings:
-      target: build
-      repo: build/dweomer/what
-      dry_run: true
-    volumes:
-      - name: docker
-        path: /var/run/docker.sock
+- name: prepare
+  image: plugins/docker
+  settings:
+    dry_run: true
+    repo: build/dweomer/what
+    target: build
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
 
-  - name: build
-    image: build/dweomer/what
-    pull: never
-    commands:
-      - make ci
-    volumes:
-      - name: docker
-        path: /var/run/docker.sock
+- name: build
+  pull: never
+  image: build/dweomer/what
+  commands:
+  - make ci
+  environment:
+    GOARCH: "${DRONE_STAGE_ARCH}"
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
 
-  - name: release
-    image: plugins/github-release
-    settings:
-      api_key:
-        from_secret: github_api_key
-      files: dist/artifacts/*
-    when:
-      event:
-        - tag
-      instance:
-        - drone-publish.k3s.io
-      ref:
-        - refs/head/master
-        - refs/tags/*
+- name: release
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_api_key
+    checksum:
+    - sha256
+    checksum_file: "CHECKSUMsum-${DRONE_STAGE_ARCH}.txt"
+    checksum_flatten: true
+    files: dist/artifacts/*
+  when:
+    event:
+    - tag
+    instance:
+    - drone-publish.k3s.io
+    ref:
+    - refs/head/master
+    - refs/tags/*
 
-  - name: publish
-    image: plugins/docker
-    settings:
-      target: package
-      repo: dweomer/what
-      tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
-      username:
-        from_secret: docker_username
-      password:
-        from_secret: docker_password
-    when:
-      event:
-        - tag
-      instance:
-        - drone-publish.k3s.io
-      ref:
-        - refs/head/master
-        - refs/tags/*
+- name: publish
+  image: plugins/docker
+  settings:
+    build_args:
+      GOARCH: "${DRONE_STAGE_ARCH}"
+    password:
+      from_secret: docker_password
+    repo: dweomer/what
+    tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
+    target: package
+    username:
+      from_secret: docker_username
+  when:
+    event:
+    - tag
+    instance:
+    - drone-publish.k3s.io
+    ref:
+    - refs/head/master
+    - refs/tags/*
 
 volumes:
-  - name: docker
-    host:
-      path: /var/run/docker.sock
+- name: docker
+  host:
+    path: /var/run/docker.sock
 
 ---
 kind: pipeline
@@ -215,8 +239,6 @@ steps:
 - name: publish-manifest
   image: plugins/manifest
   settings:
-    username:
-      from_secret: docker_username
     password:
       from_secret: docker_password
     platforms:
@@ -225,6 +247,8 @@ steps:
     - linux/arm
     target: "dweomer/what:${DRONE_TAG}"
     template: "dweomer/what:${DRONE_TAG}-ARCH"
+    username:
+      from_secret: docker_username
   when:
     event:
     - tag

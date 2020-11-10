@@ -1,5 +1,5 @@
 REPO ?= dweomer/what
-TAG  ?= $(if $(DRONE_TAG),$(DRONE_TAG),$(shell git describe --tags))
+TAG  ?= $(if $(DRONE_TAG),$(DRONE_TAG),$(shell git describe --tags --always))
 
 DOCKERIZED_TAG 	?= $(if $(TAG),$(subst +,-,$(TAG)),latest)
 
@@ -25,7 +25,7 @@ dist/artifacts/what-$(GOARCH): $(shell mkdir -p dist/artifacts) | bin/what
 	@install -s bin/what dist/artifacts/what-$(GOARCH)
 
 dist/artifacts/what-$(GOARCH).tar: dist/artifacts/what-$(GOARCH)
-	@docker build --tag dweomer/what:$(DOCKERIZED_TAG) --target=package .
+	@docker build --build-arg GOARCH=$(GOARCH) --tag dweomer/what:$(DOCKERIZED_TAG) --target=package .
 	@docker save --output dist/artifacts/what-$(GOARCH).tar dweomer/what:$(DOCKERIZED_TAG)
 
 .PHONY: build package clean ci .tags
