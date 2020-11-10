@@ -13,7 +13,6 @@ steps:
   commands:
   - apk --no-cache add file git make
   - make build
-  - file bin/what
 
 - name: release
   image: plugins/github-release

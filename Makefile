@@ -9,6 +9,7 @@ endif
 ci: build package
 
 build: bin/what
+	@file $<
 
 bin/what:
 	go build -o $@ ./cmd/what/.
