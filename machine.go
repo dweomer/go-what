@@ -1,12 +1,13 @@
 package what
 
 import (
-	"github.com/dweomer/go-what/pkg/machine"
 	"runtime"
+
+	"github.com/dweomer/go-what/pkg/machine"
 )
 
 // Machine returns a machine.What initialized with the passed 0..n machine.Option
-func Machine(opts...machine.Option) (*machine.What,error) {
+func Machine(opts ...machine.Option) (*machine.What, error) {
 	m := machine.What{
 		Architecture: struct {
 			Go     string
