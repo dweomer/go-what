@@ -1,24 +1,41 @@
 ---
 kind: pipeline
 type: docker
-name: amd64
+name: build-amd64
 
-platform:
-  os: linux
-  arch: amd64
+platform: { os: linux, arch: amd64 }
 
 steps:
+- name: prepare
+  image: plugins/docker
+  settings:
+    dry_run: true
+    repo: build/dweomer/what
+    target: build
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
+
 - name: build
-  image: golang:1.15-alpine
+  pull: never
+  image: build/dweomer/what
   commands:
-  - apk --no-cache add file git make
-  - make build
+  - make ci
+  environment:
+    DOCKER_BUILDKIT: "1"
+    GOARCH: "${DRONE_STAGE_ARCH}"
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: release
   image: plugins/github-release
   settings:
     api_key:
       from_secret: github_api_key
+    checksum: [ "sha256" ]
+    checksum_file: "CHECKSUMsum-${DRONE_STAGE_ARCH}.txt"
+    checksum_flatten: true
     files: dist/artifacts/*
   when:
     event:
@@ -32,13 +49,15 @@ steps:
 - name: publish
   image: plugins/docker
   settings:
-    target: package
-    repo: dweomer/what
-    tag: "${DRONE_TAG}-amd64"
-    username:
-      from_secret: docker_username
+    build_args:
+      GOARCH: "${DRONE_STAGE_ARCH}"
     password:
       from_secret: docker_password
+    repo: dweomer/what
+    tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
+    target: package
+    username:
+      from_secret: docker_username
   when:
     event:
     - tag
@@ -47,29 +66,50 @@ steps:
     ref:
     - refs/head/master
     - refs/tags/*
+
+volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 
 ---
 kind: pipeline
 type: docker
-name: arm64
+name: build-arm64
 
-platform:
-  os: linux
-  arch: arm64
+platform: { os: linux, arch: arm64 }
 
 steps:
+- name: prepare
+  image: plugins/docker
+  settings:
+    dry_run: true
+    repo: build/dweomer/what
+    target: build
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
+
 - name: build
-  image: golang:1.15-alpine
+  pull: never
+  image: build/dweomer/what
   commands:
-  - apk --no-cache add file git make
-  - make build
-  - file bin/what
+  - make ci
+  environment:
+    DOCKER_BUILDKIT: "1"
+    GOARCH: "${DRONE_STAGE_ARCH}"
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: release
   image: plugins/github-release
   settings:
     api_key:
       from_secret: github_api_key
+    checksum: [ "sha256" ]
+    checksum_file: "CHECKSUMsum-${DRONE_STAGE_ARCH}.txt"
+    checksum_flatten: true
     files: dist/artifacts/*
   when:
     event:
@@ -84,12 +124,14 @@ steps:
   image: plugins/docker
   settings:
     target: package
-    repo: dweomer/what
-    tag: "${DRONE_TAG}-arm64"
+    build_args:
+      GOARCH: "${DRONE_STAGE_ARCH}"
     username:
       from_secret: docker_username
     password:
       from_secret: docker_password
+    repo: dweomer/what
+    tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
   when:
     event:
     - tag
@@ -98,29 +140,50 @@ steps:
     ref:
     - refs/head/master
     - refs/tags/*
+
+volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 
 ---
 kind: pipeline
 type: docker
-name: arm
+name: build-armhf
 
-platform:
-  os: linux
-  arch: arm
+platform: { os: linux, arch: arm }
 
 steps:
+- name: prepare
+  image: plugins/docker
+  settings:
+    dry_run: true
+    repo: build/dweomer/what
+    target: build
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
+
 - name: build
-  image: golang:1.15-alpine
+  pull: never
+  image: build/dweomer/what
   commands:
-  - apk --no-cache add file git make
-  - make build
-  - file bin/what
+  - make ci
+  environment:
+    DOCKER_BUILDKIT: "1"
+    GOARCH: "${DRONE_STAGE_ARCH}"
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: release
   image: plugins/github-release
   settings:
     api_key:
       from_secret: github_api_key
+    checksum: [ "sha256" ]
+    checksum_file: "CHECKSUMsum-${DRONE_STAGE_ARCH}.txt"
+    checksum_flatten: true
     files: dist/artifacts/*
   when:
     event:
@@ -134,13 +197,15 @@ steps:
 - name: publish
   image: plugins/docker
   settings:
-    target: package
-    repo: dweomer/what
-    tag: "${DRONE_TAG}-arm"
-    username:
-      from_secret: docker_username
+    build_args:
+      GOARCH: "${DRONE_STAGE_ARCH}"
     password:
       from_secret: docker_password
+    repo: dweomer/what
+    tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
+    target: package
+    username:
+      from_secret: docker_username
   when:
     event:
     - tag
@@ -149,22 +214,23 @@ steps:
     ref:
     - refs/head/master
     - refs/tags/*
+
+volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 
 ---
 kind: pipeline
 type: docker
 name: manifest
 
-platform:
-  os: linux
-  arch: amd64
+platform: { os: linux, arch: amd64 }
 
 steps:
 - name: publish-manifest
   image: plugins/manifest
   settings:
-    username:
-      from_secret: docker_username
     password:
       from_secret: docker_password
     platforms:
@@ -173,6 +239,8 @@ steps:
     - linux/arm
     target: "dweomer/what:${DRONE_TAG}"
     template: "dweomer/what:${DRONE_TAG}-ARCH"
+    username:
+      from_secret: docker_username
   when:
     event:
     - tag
@@ -183,8 +251,8 @@ steps:
     - refs/tags/*
 
 depends_on:
-- amd64
-- arm64
-- arm
+- build-amd64
+- build-arm64
+- build-armhf
 
 ...
