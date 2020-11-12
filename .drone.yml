@@ -48,9 +48,12 @@ steps:
 
 - name: publish
   image: plugins/docker
+  environment:
+    DOCKER_BUILDKIT: "1"
+    GOARCH: "${DRONE_STAGE_ARCH}"
   settings:
-    build_args:
-      GOARCH: "${DRONE_STAGE_ARCH}"
+    build_args_from_env:
+    - GOARCH
     password:
       from_secret: docker_password
     repo: dweomer/what
@@ -122,16 +125,19 @@ steps:
 
 - name: publish
   image: plugins/docker
+  environment:
+    DOCKER_BUILDKIT: "1"
+    GOARCH: "${DRONE_STAGE_ARCH}"
   settings:
-    target: package
-    build_args:
-      GOARCH: "${DRONE_STAGE_ARCH}"
-    username:
-      from_secret: docker_username
+    build_args_from_env:
+    - GOARCH
     password:
       from_secret: docker_password
     repo: dweomer/what
     tag: "${DRONE_TAG}-${DRONE_STAGE_ARCH}"
+    target: package
+    username:
+      from_secret: docker_username
   when:
     event:
     - tag
@@ -196,9 +202,12 @@ steps:
 
 - name: publish
   image: plugins/docker
+  environment:
+    DOCKER_BUILDKIT: "1"
+    GOARCH: "${DRONE_STAGE_ARCH}"
   settings:
-    build_args:
-      GOARCH: "${DRONE_STAGE_ARCH}"
+    build_args_from_env:
+    - GOARCH
     password:
       from_secret: docker_password
     repo: dweomer/what
